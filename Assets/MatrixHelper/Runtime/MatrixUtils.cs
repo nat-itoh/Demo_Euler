@@ -216,6 +216,7 @@ namespace nitou {
         }
 
         public static EulerAngles2 GetEulerAnglesZYZ(Matrix4x4 mat) {
+
             // ZYZオイラー角の計算
             float s1 = Mathf.Atan2(mat.m10, mat.m00);   // 最初のZ軸回転
             float p = Mathf.Acos(Mathf.Clamp(mat.m11, -1.0f, 1.0f)); // Y軸回転
@@ -231,8 +232,17 @@ namespace nitou {
         /// <returns>ZYZオイラー角 (alpha, beta, gamma)</returns>
         public static EulerAngles2 FromRotationMatrixZYZ(Matrix4x4 mat) {
 
+            // Rz`y`z`(αβγ)
+            // = Rα Rβ Rγ
+            //   | cαcβcγ-sαsγ -cαcβsγ-sαcβγ cαsβ |
+            // = | cαcβcγ+cαsγ -sαcβsγ+cαcγ  sαsβ |
+            //   |    -sβcγ         sβsγ      cβ  |
+
+            // m22からβを導出できる．
+            // またsinβ≠0（非ジンバルロック）のとき、m02とm12からα、m20とm21からγを導出できる．
+
             float alpha, beta, gamma;
-            beta = Mathf.Acos(mat.m22); // R33
+            beta = Mathf.Acos(mat.m22);
 
             // 特殊ケースの処理
             // beta = 0 の場合 (Z軸回りの回転のみ)
@@ -249,8 +259,8 @@ namespace nitou {
 
             // 通常ケース
             else {
-                alpha = Mathf.Atan2(mat.m12, mat.m02); // atan2(R23, R13)
-                gamma = Mathf.Atan2(mat.m21, -mat.m20); // atan2(R32, -R31)
+                alpha = Mathf.Atan2(mat.m12, mat.m02); // arctan(m12, m02)
+                gamma = Mathf.Atan2(mat.m21, -mat.m20); // arctan(m21, -m20)
             }
 
             return new EulerAngles2(EulerAngles2.Type.ZYZ, alpha, beta, gamma);
